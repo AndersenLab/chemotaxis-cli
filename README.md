@@ -30,4 +30,4 @@ A command-line program for calculating the chemotaxis index of a plate (CI).
 
 ### Filter small particles
 
-![Filter small particles](img/e1m.10_filter_small.png.png)
+![Filter small particles](img/e1m.10_filter_small.png)
