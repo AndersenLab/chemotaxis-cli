@@ -5,19 +5,19 @@ import os
 with open('requirements.txt') as f:
     required = [x for x in f.read().splitlines() if not x.startswith("#")]
 
-from cli import __version__, _program
+from ct import __version__, _program
 
 setup(name=_program,
       version=__version__,
-      packages=['cli'],
-      description='Skeleton commandline python project',
-      url='https://github.com/danielecook/python-cli-skeleton',
+      packages=['ct'],
+      description='Count worms from chemotaxis assays',
+      url='https://github.com/AndersenLab/chemotaxis-cli',
       author='YOUR NAME',
-      author_email='youremail@email.com',
+      author_email='danielecook@gmail.com',
       license='MIT',
       entry_points="""
       [console_scripts]
-      {program} = cli.command:main
+      {program} = ct.command:main
       """.format(program = _program),
       keywords=[],
       tests_require=['pytest', 'coveralls'],

@@ -1,53 +1,33 @@
 [![Build Status](https://travis-ci.org/danielecook/python-cli-skeleton.svg?branch=master)](https://travis-ci.org/danielecook/python-cli-skeleton) [![Coverage Status](https://coveralls.io/repos/github/danielecook/python-cli-skeleton/badge.svg?branch=master)](https://coveralls.io/github/danielecook/python-cli-skeleton?branch=master)
 
-# python-cli-skeleton
+# chemotaxis-cli
 
-A simple python command line interface skeleton project. Features support for:
+A command-line program for calculating the chemotaxis index of a plate (CI).
 
-* travis-ci
-* coveralls
-* argparse
-* py.test (testing)
+### Original
 
-__Installation__
+![original](img/e1m.png)
 
-```
-python setup.py install 
-```
+### Crop
 
-For development, use:
+![crop](img/e1m.05_crop.png)
 
-```
-python setup.py develop
-```
+### Mask
 
-...and the program will be installed in-place, allowing you to edit the script files and test them from the command line.
+![mask](img/e1m.06_mask.png)
 
-__Usage__
+### Edge detection
 
-The setup script will install the program as `cli`. You can invoke it using:
+![edge detection](img/e1m.07_edges.png)
 
-```
-cli
-```
+### Edge dilation
 
-To change the way the program is invoked, edit the `cli/__init__.py` file where you can set the `__version__` and `_program` variables. The `_program` variable sets the commandline command (`cli`), and the program name. You may want to change the names of modules (folders) as well to reflect your program. You should change the entry_point part of the setup script to reflect any changes you make to folders/files:
+![edge dilation](img/e1m.08_dilation.png)
 
-```
-entry_points="""
-[console_scripts]
-{program} = cli.cli:main
-""".format(program = _program),
-```
+### Binary Fill
 
-__requirements.txt__
+![binary fill](img/e1m.09_fill.png)
 
-Add any modules you want installed to the `requirements.txt` file. The setup file parses this file before installation. Currently, `[clint](https://github.com/kennethreitz/clint)` is the only requirement. It is a useful module for adding color, indenting, progress bars, and other useful things to command-line based programs.
+### Filter small particles
 
-__travis-ci__
-
-A `.travis.yml` file is included and setup for Python. Testing is performed using Python 2.7 and 3.6. You will need to setup `[travis-ci.org](travis-ci.org)` to perform testing.
-
-__coveralls__
-
-Support for coveralls is build in using `pytest-cov`. Please see [coveralls.io](https://coveralls.io/) for more information. You may want to edit the `.coveragerc` file to fine tune how coverage is calculated.
+![Filter small particles](img/e1m.10_filter_small.png.png)
