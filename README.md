@@ -33,3 +33,11 @@ Here is what we have so far!
 ### Filter small particles
 
 ![Filter small particles](img/e1m.10_filter_small.png)
+
+### Applied Filters
+
+![Applied filters](img/e1m.10_filters.png)
+
+### End Filters
+
+![End Filters](img/e1m.11_filtered.png)
