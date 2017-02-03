@@ -2,7 +2,9 @@
 
 # chemotaxis-cli
 
-A command-line program for calculating the chemotaxis index of a plate (CI).
+A command-line program for calculating the chemotaxis index of a plate (CI). 
+
+Here is what we have so far!
 
 ### Original
 

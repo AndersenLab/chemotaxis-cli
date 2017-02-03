@@ -4,19 +4,23 @@ from skimage.transform import hough_circle
 from skimage.feature import peak_local_max, canny
 from skimage.feature import blob_dog, blob_log, blob_doh
 from skimage.draw import circle_perimeter
-from skimage.morphology import binary_dilation
-from skimage.util import img_as_bool
+from skimage.morphology import binary_closing, binary_dilation, binary_erosion
+from skimage.util import img_as_bool, img_as_int
 from scipy import ndimage as ndi
 from numpy import invert
 from skimage.draw import circle
 from skimage.io import imread
-from clint.textui import puts, indent, colored
+from clint.textui import puts_err, indent, colored
 import matplotlib.pyplot as plt
 import warnings
 import hashlib
+import pickle
+from skimage.measure import regionprops
+from matplotlib import colors
 
+_program = "ct"
+__version__ = "0.0.1"
 
-import os, pickle
 def memoize(func):
     def decorated(*args, **kwargs):
         if not os.path.exists('_cache'):
@@ -42,10 +46,14 @@ def suppress_warning(f):
             return f(*args, **kwargs)
     return decorated
 
-canny = memoize(canny)
+#canny = memoize(canny)
 
-_program = "ct"
-__version__ = "0.0.1"
+def ci(v):
+    """
+        Calculate the chemotaxis index
+    """
+    return ((v[0] + v[3]) - (v[1] + v[2])) / float(v[6])
+
 
 @memoize
 @suppress_warning
@@ -54,7 +62,7 @@ def find_plate(img, radii_range):
         Identifies the location of the plate
     """
     # Read image, and convert to floating point
-    img = invert(img_as_bool(imread(img, mode="F", flatten=True)))
+    img = img_as_bool(imread(img, mode="F", flatten=True))
 
     # Detect edges
     edges = canny(img, sigma=2)
@@ -78,14 +86,14 @@ def find_plate(img, radii_range):
     return center, radius
 
 @suppress_warning
-def crop_and_filter_plate(img, radii_range, extra_crop, small_obj_size = 100, debug= False):
+def crop_and_filter_plate(img, radii_range, extra_crop, small = 100, large = 1200, debug= False):
     fname = os.path.splitext(os.path.basename(img))[0]
     center, radius = find_plate(img, radii_range)
     if debug:
         with indent(4):
-            puts(colored.blue("Center: " + str(center[0]) + "," + str(center[1])))
-            puts(colored.blue("Radius: " + str(radius)))
-            puts(colored.blue("Cropping plate"))
+            puts_err(colored.blue("Center: " + str(center[0]) + "," + str(center[1])))
+            puts_err(colored.blue("Radius: " + str(radius)))
+            puts_err(colored.blue("Cropping plate"))
 
     y, x = center
 
@@ -100,7 +108,7 @@ def crop_and_filter_plate(img, radii_range, extra_crop, small_obj_size = 100, de
 
     if debug:
         with indent(4):
-            puts(colored.blue("Circular crop"))
+            puts_err(colored.blue("Circular crop"))
         plt.imsave("debug/" + fname + ".05_crop.png", img)
 
     # Redefine x,y,radius; Generate circle mask.
@@ -113,11 +121,11 @@ def crop_and_filter_plate(img, radii_range, extra_crop, small_obj_size = 100, de
 
     if debug:
         with indent(4):
-            puts(colored.blue("Performing edge detection"))
+            puts_err(colored.blue("Performing edge detection"))
         plt.imsave("debug/" + fname + ".06_mask.png", img)
 
     # Apply a canny filter
-    img = canny(img, sigma=1.5, mask = mask == 1, low_threshold = 0.05, high_threshold = 0.20)
+    img = canny(img, sigma=1.5, mask = mask == 1, low_threshold = 0.20, high_threshold = 0.30)
 
     # Remove the edge
     mask = np.zeros(img.shape, dtype=np.uint8)
@@ -127,15 +135,15 @@ def crop_and_filter_plate(img, radii_range, extra_crop, small_obj_size = 100, de
 
     if debug:
         with indent(4):
-            puts(colored.blue("Binary  Dilation"))
+            puts_err(colored.blue("Binary  Dilation"))
         plt.imsave("debug/" + fname + ".07_edges.png", img, cmap='copper')
 
     # Dilate
-    img = binary_dilation(img)
+    img = binary_dilation(binary_closing(img))
 
     if debug:
         with indent(4):
-            puts(colored.blue("Binary Fill"))
+            puts_err(colored.blue("Binary Fill"))
         plt.imsave("debug/" + fname + ".08_dilation.png", img, cmap='copper')
 
     # Fill edges
@@ -143,18 +151,66 @@ def crop_and_filter_plate(img, radii_range, extra_crop, small_obj_size = 100, de
 
     if debug:
         with indent(4):
-            puts(colored.blue("Filter small particles"))
+            puts_err(colored.blue("Apply filters"))
         plt.imsave("debug/" + fname + ".09_fill.png", img, cmap='copper')
 
     # Remove small particles
     label_objects, nb_labels = ndi.label(img)
     sizes = np.bincount(label_objects.ravel())
-    mask_sizes = sizes > small_obj_size
-    mask_sizes[0] = 0
-    img = mask_sizes[label_objects]
+
+    # Label by mask
+    reg_props = regionprops(label_objects)
+    axis_length = np.array([x.minor_axis_length for x in reg_props])
+    ecc = np.array([x.eccentricity for x in reg_props])
+    solidity = np.array([x.solidity for x in reg_props])
+    filters = np.zeros(len(reg_props)+1, dtype='int32')
+    filters[filters == 0] = 4
+    filters[sizes < small] = 1
+    filters[sizes > large] = 2
+    filters[0] = 0
+
+    filter_img = label_objects.copy()
+    for k,v in enumerate(filters):
+        filter_img[filter_img == k] = v
 
     if debug:
-        plt.imsave("debug/" + fname + ".10_filter_small.png", img, cmap='copper')
+        cmap = colors.ListedColormap(['white', 'red', 'blue', 'green', 'gray'])
+        bounds=[0,1,2,3,4]
+        norm = colors.BoundaryNorm(bounds, cmap.N)
+        plt.imsave("debug/" + fname + ".10_filters.png", filter_img, cmap=cmap)
+
+    filters = filters == 4
+    filters[0] = 0
+    img = filters[label_objects]
+
+    if debug:
+        plt.imsave("debug/" + fname + ".11_filtered.png", img, cmap='copper')
 
     return img
+
+
+def pixel_counts(img, n_radius_divisor):
+    r = img.shape[0]/2
+
+    mask = np.zeros(img.shape, dtype=np.uint8)
+    x, y, radius = [img.shape[0]/2] * 3
+    radius = radius / n_radius_divisor
+    rr, cc = circle(y, x, radius)
+    mask[rr, cc] = 1
+
+    n, q = img.copy(), img.copy()
+    q[mask == 1] = False
+    n[mask == 0] = False
+
+    tl = sum(q[0:r,0:r].flatten())
+    tr = sum(q[0:r,r:].flatten())
+    bl = sum(q[r:,0:r].flatten())
+    br = sum(q[r:,r:].flatten())
+    n = sum(n.flatten())
+    total_q = sum(q.flatten())
+    total = sum(img.flatten())
+    ret = [tl, tr, bl, br, n, total_q, total]
+    ci_val = ci(ret)
+    return ret + [ci_val]
+
 
