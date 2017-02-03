@@ -30,10 +30,6 @@ Here is what we have so far!
 
 ![binary fill](img/e1m.09_fill.png)
 
-### Filter small particles
-
-![Filter small particles](img/e1m.10_filter_small.png)
-
 ### Applied Filters
 
 ![Applied filters](img/e1m.10_filters.png)
