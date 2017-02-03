@@ -46,7 +46,6 @@ def suppress_warning(f):
             return f(*args, **kwargs)
     return decorated
 
-#canny = memoize(canny)
 
 def ci(v):
     """
@@ -168,6 +167,14 @@ def crop_and_filter_plate(img, radii_range, extra_crop, small = 100, large = 120
     filters[sizes < small] = 1
     filters[sizes > large] = 2
     filters[0] = 0
+
+    if debug:
+        if not os.path.exists("debug/" + fname + "/"):
+            os.makedirs("debug/" + fname + "/")
+        for reg in reg_props:
+            print(dir(reg))
+            print(reg.image)
+            plt.imsave("debug/" + fname + "/" + str(reg.label), reg.image, cmap='copper')
 
     filter_img = label_objects.copy()
     for k,v in enumerate(filters):
