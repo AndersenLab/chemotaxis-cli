@@ -36,7 +36,7 @@ def main(args = sys.argv[1:]):
                         "--large",
                         help="Filter out particles larger than specified",
                         type=int,
-                        default=1200)
+                        default=1500)
 
     parser.add_argument("-r",
                     "--rev",
