@@ -98,10 +98,10 @@ def crop_and_filter_plate(img, radii_range, extra_crop, small = 100, large = 120
 
     # Filter background
     img = imread(img, flatten = True)
-    t_crop = y - radius + extra_crop
-    b_crop = t_crop + radius*2 - extra_crop*2
-    l_crop = x - radius + extra_crop
-    r_crop = x + radius - extra_crop
+    t_crop = int(y - radius + extra_crop)
+    b_crop = int(t_crop + radius*2 - extra_crop*2)
+    l_crop = int(x - radius + extra_crop)
+    r_crop = int(x + radius - extra_crop)
     img = img[t_crop:b_crop]
     img = img[:,l_crop:r_crop]
 
@@ -174,7 +174,7 @@ def crop_and_filter_plate(img, radii_range, extra_crop, small = 100, large = 120
         for reg in reg_props:
             print(dir(reg))
             print(reg.image)
-            plt.imsave("debug/" + fname + "/" + str(reg.label), reg.image, cmap='copper')
+            plt.imsave("debug/" + fname + "/" + str(reg.label) + ".png", reg.image, cmap='copper')
 
     filter_img = label_objects.copy()
     for k,v in enumerate(filters):
