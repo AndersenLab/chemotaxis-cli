@@ -1,13 +1,9 @@
 import sys
 import argparse
-from . import _program, crop_and_filter_plate, pixel_counts
+from . import _program, crop_and_filter_plate, pixel_counts, make_dir
 from clint.textui import puts_err, indent, colored
 import os
 import sys
-
-def make_dir(d):
-    if not os.path.exists(d):
-        os.makedirs(d)
 
 
 def main(args = sys.argv[1:]):
@@ -54,6 +50,12 @@ def main(args = sys.argv[1:]):
                     type=int,
                     default=5)
 
+    parser.add_argument("-t",
+                        "--train",
+                        help="Train Dataset",
+                        action="store_true",
+                        default=False)
+
     parser.add_argument("-d",
                         "--debug",
                         help="Output debug information",
@@ -79,7 +81,8 @@ def main(args = sys.argv[1:]):
                                         small=args.small,
                                         large=args.large,
                                         extra_crop=args.crop,
-                                        debug=args.debug)
+                                        debug=args.debug,
+                                        train=args.train)
 
             puts_err(colored.blue("Use pixel method for calculation"))
             result = pixel_counts(img, args.center)
