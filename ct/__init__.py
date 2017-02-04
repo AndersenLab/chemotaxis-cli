@@ -5,7 +5,7 @@ from skimage.feature import peak_local_max, canny
 from skimage.feature import blob_dog, blob_log, blob_doh
 from skimage.draw import circle_perimeter
 from skimage.morphology import binary_closing, binary_dilation, binary_erosion
-from skimage.util import img_as_bool, img_as_int
+from skimage.util import img_as_bool, img_as_int, img_as_float
 from scipy import ndimage as ndi
 from numpy import invert
 from skimage.draw import circle
@@ -164,6 +164,7 @@ def crop_and_filter_plate(img, radii_range, extra_crop, small = 100, large = 120
     solidity = np.array([x.solidity for x in reg_props])
     filters = np.zeros(len(reg_props)+1, dtype='int32')
     filters[filters == 0] = 4
+    filters[sizes < small*5] = 5
     filters[sizes < small] = 1
     filters[sizes > large] = 2
     filters[0] = 0
@@ -172,8 +173,6 @@ def crop_and_filter_plate(img, radii_range, extra_crop, small = 100, large = 120
         if not os.path.exists("debug/" + fname + "/"):
             os.makedirs("debug/" + fname + "/")
         for reg in reg_props:
-            print(dir(reg))
-            print(reg.image)
             plt.imsave("debug/" + fname + "/" + str(reg.label) + ".png", reg.image, cmap='copper')
 
     filter_img = label_objects.copy()
@@ -181,14 +180,15 @@ def crop_and_filter_plate(img, radii_range, extra_crop, small = 100, large = 120
         filter_img[filter_img == k] = v
 
     if debug:
-        cmap = colors.ListedColormap(['white', 'red', 'blue', 'green', 'gray'])
-        bounds=[0,1,2,3,4]
-        norm = colors.BoundaryNorm(bounds, cmap.N)
-        plt.imsave("debug/" + fname + ".10_filters.png", filter_img, cmap=cmap)
+        plt.imsave("debug/" + fname + ".10_filters.png", filter_img, cmap='copper')
 
-    filters = filters == 4
+    filters[filters < 4] = 0
     filters[0] = 0
     img = filters[label_objects]
+
+    # Rescale and weight
+    img[img == 4] = 1
+    img[img == 5] = 1
 
     if debug:
         plt.imsave("debug/" + fname + ".11_filtered.png", img, cmap='copper')
@@ -206,13 +206,16 @@ def pixel_counts(img, n_radius_divisor):
     mask[rr, cc] = 1
 
     n, q = img.copy(), img.copy()
-    q[mask == 1] = False
-    n[mask == 0] = False
-
+    q[mask == 1] = 0
+    n[mask == 0] = 0
     tl = sum(q[0:r,0:r].flatten())
     tr = sum(q[0:r,r:].flatten())
     bl = sum(q[r:,0:r].flatten())
     br = sum(q[r:,r:].flatten())
+    plt.imsave("debug/q1.png", q[0:r,0:r], cmap = 'copper')
+    plt.imsave("debug/q2.png", q[0:r,r:], cmap = 'copper')
+    plt.imsave("debug/q3.png", q[r:,0:r], cmap = 'copper')
+    plt.imsave("debug/q4.png", q[r:,r:], cmap = 'copper')
     n = sum(n.flatten())
     total_q = sum(q.flatten())
     total = sum(img.flatten())
