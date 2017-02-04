@@ -50,12 +50,6 @@ def main(args = sys.argv[1:]):
                     type=int,
                     default=5)
 
-    parser.add_argument("-t",
-                        "--train",
-                        help="Train Dataset",
-                        action="store_true",
-                        default=False)
-
     parser.add_argument("-d",
                         "--debug",
                         help="Output debug information",
@@ -81,8 +75,7 @@ def main(args = sys.argv[1:]):
                                         small=args.small,
                                         large=args.large,
                                         extra_crop=args.crop,
-                                        debug=args.debug,
-                                        train=args.train)
+                                        debug=args.debug)
 
             puts_err(colored.blue("Use pixel method for calculation"))
             result = pixel_counts(img, args.center)

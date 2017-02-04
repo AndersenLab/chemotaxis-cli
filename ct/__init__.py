@@ -5,7 +5,7 @@ from skimage.feature import peak_local_max, canny
 from skimage.feature import blob_dog, blob_log, blob_doh
 from skimage.draw import circle_perimeter
 from skimage.morphology import binary_closing, binary_dilation, binary_erosion
-from skimage.util import img_as_bool, img_as_int
+from skimage.util import img_as_bool, img_as_int, img_as_float
 from scipy import ndimage as ndi
 from numpy import invert
 from skimage.draw import circle
@@ -17,21 +17,6 @@ import hashlib
 import pickle
 from skimage.measure import regionprops
 from matplotlib import colors
-
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-
-from skimage import data
-from skimage.filters import threshold_otsu
-from skimage.segmentation import clear_border
-from skimage.measure import label
-from skimage.morphology import closing, square
-from skimage.measure import regionprops
-from skimage.color import label2rgb
-from sklearn import svm
-from glob import glob
-
 
 _program = "ct"
 __version__ = "0.0.1"
@@ -73,39 +58,6 @@ def ci(v):
     """
     return ((v[0] + v[3]) - (v[1] + v[2])) / float(v[6])
 
-@memoize
-def fit_model(X, y):
-    """
-        Fits model
-    """
-    clf = svm.SVC(verbose = False, kernel = 'linear')
-    if X:
-        clf.fit(X, y) 
-        return clf
-    else:
-        return None
-
-def load_model():
-    """
-        Loads training data and fits; caching for speed.
-    """
-    X_sets, y_sets = [], []
-    for X in glob("train/X_*.data"):
-        X_sets.extend(pickle.load(open(X, 'rb')))
-    for y in glob("train/y_*.data"):
-        y_sets.extend(pickle.load(open(y, 'rb')))
-    
-    return fit_model(X_sets, y_sets)
-
-
-def save_training_set(X, y, fname):
-    """
-        Save individual traning set
-    """
-    make_dir("train")
-    pickle.dump(X, open("train/X_" + fname + ".data", 'wb'))
-    pickle.dump(y, open("train/y_" + fname + ".data", 'wb'))
-
 
 @memoize
 @suppress_warning
@@ -137,53 +89,8 @@ def find_plate(img, radii_range):
     radius = (sum(radii) * 1.0) / len(radii)
     return center, radius
 
-
-class bbox:
-    """
-        Object for handling feature selection
-    """
-
-
-    def __init__(self, obj):
-        self.t, self.l, self.b, self. r = obj.bbox
-        self.label = obj.label
-
-        # Construct properties
-        properties = []
-        properties.extend(obj.bbox) # Bounding box
-        properties.append(obj.perimeter)
-        properties.append(obj.area)
-        properties.extend(obj.centroid)
-        properties.append(obj.eccentricity)
-        properties.append(obj.extent)
-        properties.append(obj.filled_area)
-        properties.extend(obj.inertia_tensor_eigvals)
-        properties.append(obj.major_axis_length)
-        properties.append(obj.orientation)
-        properties.append(obj.solidity)
-        self.properties = properties
-
-    def in_box(self, x, y):
-        return (self.t < y and y < self.b and self.l < x and x < self.r)
-
-    def set_box(self, ax, mode = None):
-
-        if mode == 'toggle':
-            self.toggle = not self.toggle
-
-        if self.toggle == True:
-            self.color = '#0d99fc'
-        else:
-            self.color = '#ff2a1a'
-        rect = mpatches.Rectangle((self.l, self.t), self.r - self.l, self.b - self.t,
-                          fill=False, edgecolor=self.color, linewidth=2)
-        ax.add_patch(rect)
-
-    def __repr__(self):
-        return "[{label}]".format(label = self.label)
-
 @suppress_warning
-def crop_and_filter_plate(img, radii_range, extra_crop, small = 100, large = 1200, debug= False, train = False):
+def crop_and_filter_plate(img, radii_range, extra_crop, small = 100, large = 1200, debug= False):
     fname = os.path.splitext(os.path.basename(img))[0]
     center, radius = find_plate(img, radii_range)
     if debug:
@@ -202,8 +109,6 @@ def crop_and_filter_plate(img, radii_range, extra_crop, small = 100, large = 120
     r_crop = int(x + radius - extra_crop)
     img = img[t_crop:b_crop]
     img = img[:,l_crop:r_crop]
-
-    img_out = img.copy()
 
     if debug:
         with indent(4):
@@ -260,89 +165,35 @@ def crop_and_filter_plate(img, radii_range, extra_crop, small = 100, large = 120
     # Label by mask
     reg_props = regionprops(label_objects)
     axis_length = np.array([x.minor_axis_length for x in reg_props])
-
-    # Apply SVM
-    model = load_model()
-    if model is None:
-        with indent(4):
-            puts_err(colored.red("You need to train first!"))
-
-    # Apply SVM
-    objects = []
-    for reg in reg_props:
-        box = bbox(reg)
-        pred = model.predict(box.properties)[0]
-        box.toggle = pred
-        objects.append(box)
-
-    if train:     
-        fig = plt.gcf()
-        ax = plt.gca()
-
-        # remove artifacts connected to image border
-        cleared = img_out.copy()
-        clear_border(cleared)
-
-        # label image regions
-        label_image = label(cleared)
-        borders = np.logical_xor(img_out, cleared)
-        label_image[borders] = -1        
-        image_label_overlay = label2rgb(label_image, image=img_out)
-        ax.imshow(image_label_overlay)
-
-        for box in objects:
-            box.set_box(ax)
-
-        im = plt.imshow(img_out, cmap = 'Greys')
-
-        class EventHandler:
-            def __init__(self):
-                fig.canvas.mpl_connect('button_press_event', self.onpress)
-
-            def onpress(self, event):
-                if event.inaxes!=ax:
-                    return
-                xi, yi = (int(round(n)) for n in (event.xdata, event.ydata))
-                value = im.get_array()[xi,yi]
-                color = im.cmap(im.norm(value))
-                [x.set_box(ax, 'toggle') for x in objects if x.in_box(xi, yi)]
-                fig.canvas.draw()
-
-        handler = EventHandler()
-
-        with indent(4):
-            puts_err(colored.blue("\nClick non-worm objects (set bounding box to red). Exit when done.\n"))
-
-        plt.show()
-
-        # Save training data
-        X = [x.properties for x in objects]
-        y = [x.toggle for x in objects]
-        save_training_set(X, y, fname)
-
-    # apply filters
-    svm_filter = np.array([True] + [x.toggle for x in objects])
-
-    # Label filters
+    ecc = np.array([x.eccentricity for x in reg_props])
+    solidity = np.array([x.solidity for x in reg_props])
     filters = np.zeros(len(reg_props)+1, dtype='int32')
-    filters[filters == 0] = 2 # KEEP
-    filters[svm_filter == False] = 1 # FILTER
-    filters[0] = 0 # Background
+    filters[filters == 0] = 4
+    filters[sizes < small*5] = 5
+    filters[sizes < small] = 1
+    filters[sizes > large] = 2
+    filters[0] = 0
+
+    if debug:
+        if not os.path.exists("debug/" + fname + "/"):
+            os.makedirs("debug/" + fname + "/")
+        for reg in reg_props:
+            plt.imsave("debug/" + fname + "/" + str(reg.label) + ".png", reg.image, cmap='copper')
 
     filter_img = label_objects.copy()
     for k,v in enumerate(filters):
         filter_img[filter_img == k] = v
 
     if debug:
-        cmap = colors.ListedColormap(['white', 'red', 'gray'])
-        bounds=[0,1,2]
-        norm = colors.BoundaryNorm(bounds, cmap.N)
-        plt.imsave("debug/" + fname + ".10_filters.png", filter_img, cmap=cmap)
+        plt.imsave("debug/" + fname + ".10_filters.png", filter_img, cmap='copper')
 
-    # Apply filter
-    filters = filters == 2
+    filters[filters < 4] = 0
     filters[0] = 0
     img = filters[label_objects]
+
+    # Rescale and weight
+    img[img == 4] = 1
+    img[img == 5] = 1
 
     if debug:
         plt.imsave("debug/" + fname + ".11_filtered.png", img, cmap='copper')
@@ -360,13 +211,16 @@ def pixel_counts(img, n_radius_divisor):
     mask[rr, cc] = 1
 
     n, q = img.copy(), img.copy()
-    q[mask == 1] = False
-    n[mask == 0] = False
-
+    q[mask == 1] = 0
+    n[mask == 0] = 0
     tl = sum(q[0:r,0:r].flatten())
     tr = sum(q[0:r,r:].flatten())
     bl = sum(q[r:,0:r].flatten())
     br = sum(q[r:,r:].flatten())
+    plt.imsave("debug/q1.png", q[0:r,0:r], cmap = 'copper')
+    plt.imsave("debug/q2.png", q[0:r,r:], cmap = 'copper')
+    plt.imsave("debug/q3.png", q[r:,0:r], cmap = 'copper')
+    plt.imsave("debug/q4.png", q[r:,r:], cmap = 'copper')
     n = sum(n.flatten())
     total_q = sum(q.flatten())
     total = sum(img.flatten())
