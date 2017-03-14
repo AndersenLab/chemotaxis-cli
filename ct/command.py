@@ -45,7 +45,7 @@ def main(args = sys.argv[1:]):
 
     parser.add_argument("--header",
                         help="Output a header",
-                        default=True,
+                        default=False,
                         action="store_true")
 
     parser.add_argument("-c",
