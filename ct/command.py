@@ -1,13 +1,9 @@
 import sys
 import argparse
-from . import _program, crop_and_filter_plate, pixel_counts
+from . import _program, crop_and_filter_plate, pixel_counts, make_dir
 from clint.textui import puts_err, indent, colored
 import os
 import sys
-
-def make_dir(d):
-    if not os.path.exists(d):
-        os.makedirs(d)
 
 
 def main(args = sys.argv[1:]):
