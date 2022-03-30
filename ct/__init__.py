@@ -61,7 +61,7 @@ def ci(v):
 
 @memoize
 @suppress_warning
-def find_plate(img, radii_range):
+def find_plate(img, radii_range, fp_sigma):
     """
         Identifies the location of the plate
     """
@@ -69,7 +69,7 @@ def find_plate(img, radii_range):
     img = img_as_bool(imread(img, mode="F", flatten=True))
 
     # Detect edges
-    edges = canny(img, sigma=2)
+    edges = canny(img, sigma=fp_sigma)
 
     # Find circles
     hough_radii = np.arange(radii_range[0], radii_range[1], 2)
@@ -78,35 +78,36 @@ def find_plate(img, radii_range):
     centers, accums, radii = [], [], []
 
     for radius, h in zip(hough_radii, hough_res):
-        # For each radius, extract two circles
         num_peaks = 1
         peaks = peak_local_max(h, num_peaks=num_peaks)
         centers.extend(peaks)
         accums.extend(h[peaks[:, 0], peaks[:, 1]])
         radii.extend([radius] * num_peaks)
 
-    center = np.mean(centers, axis=0)
-    radius = (sum(radii) * 1.0) / len(radii)
+    center = np.mean(centers, axis=0) # find mean center
+    radius = (sum(radii) * 1.0) / len(radii) # find mean radius
     return center, radius
 
 @suppress_warning
-def crop_and_filter_plate(img, radii_range, extra_crop, small = 100, large = 1200, debug= False):
+def crop_and_filter_plate(img, radii_range, fp_sigma, extra_crop, small = 100, large = 1200, debug= False):
+    # get the file name
     fname = os.path.splitext(os.path.basename(img))[0]
-    center, radius = find_plate(img, radii_range)
+    # find the center and radius of the plate in image
+    center, radius = find_plate(img, radii_range, fp_sigma)
     if debug:
         with indent(4):
             puts_err(colored.blue("Center: " + str(center[0]) + "," + str(center[1])))
             puts_err(colored.blue("Radius: " + str(radius)))
             puts_err(colored.blue("Cropping plate"))
-
+    # define pixel coord for center of plate
     y, x = center
 
-    # Filter background
+    # Crop image to plate
     img = imread(img, flatten = True)
-    t_crop = int(y - radius + extra_crop)
-    b_crop = int(t_crop + radius*2 - extra_crop*2)
-    l_crop = int(x - radius + extra_crop)
-    r_crop = int(x + radius - extra_crop)
+    t_crop = int(y - radius)
+    b_crop = int(y + radius)
+    l_crop = int(x - radius)
+    r_crop = int(x + radius)
     img = img[t_crop:b_crop]
     img = img[:,l_crop:r_crop]
 
@@ -115,11 +116,11 @@ def crop_and_filter_plate(img, radii_range, extra_crop, small = 100, large = 120
             puts_err(colored.blue("Circular crop"))
         plt.imsave("debug/" + fname + ".05_crop.png", img)
 
-    # Redefine x,y,radius; Generate circle mask.
-    mask = np.zeros(img.shape, dtype=np.uint8)
+    # Redefine x,y,radius; Generate circle mask with edge trimmed by --crop.
+    mask = np.zeros(img.shape, dtype=np.uint8) # make empty mask with dim of img
     x, y, radius = [img.shape[0]/2] * 3
 
-    rr, cc = circle(y, x, radius)
+    rr, cc = circle(y, x, radius-extra_crop) # trim mask by --crop
     mask[rr, cc] = 1
     img[mask == 0] = False
 
@@ -130,12 +131,6 @@ def crop_and_filter_plate(img, radii_range, extra_crop, small = 100, large = 120
 
     # Apply a canny filter
     img = canny(img, sigma=1.5, mask = mask == 1, low_threshold = 0.20, high_threshold = 0.30)
-
-    # Remove the edge
-    mask = np.zeros(img.shape, dtype=np.uint8)
-    rr, cc = circle(y, x, radius-3)
-    mask[rr, cc] = 1
-    img[mask == 0] = False
 
     if debug:
         with indent(4):
@@ -162,7 +157,7 @@ def crop_and_filter_plate(img, radii_range, extra_crop, small = 100, large = 120
     label_objects, nb_labels = ndi.label(img)
     sizes = np.bincount(label_objects.ravel())
 
-    # Label by mask
+    # Describe objects and filter values
     reg_props = regionprops(label_objects)
     axis_length = np.array([x.minor_axis_length for x in reg_props])
     ecc = np.array([x.eccentricity for x in reg_props])
@@ -187,11 +182,12 @@ def crop_and_filter_plate(img, radii_range, extra_crop, small = 100, large = 120
     if debug:
         plt.imsave("debug/" + fname + ".10_filters.png", filter_img, cmap='copper')
 
+    # Only keep filters 4 and 5
     filters[filters < 4] = 0
     filters[0] = 0
     img = filters[label_objects]
 
-    # Rescale and weight
+    # Make these equivalent
     img[img == 4] = 1
     img[img == 5] = 1
 
@@ -199,7 +195,6 @@ def crop_and_filter_plate(img, radii_range, extra_crop, small = 100, large = 120
         plt.imsave("debug/" + fname + ".11_filtered.png", img, cmap='copper')
 
     return img
-
 
 def pixel_counts(img, n_radius_divisor):
     r = img.shape[0]/2
@@ -227,5 +222,3 @@ def pixel_counts(img, n_radius_divisor):
     ret = [tl, tr, bl, br, n, total_q, total]
     ci_val = ci(ret)
     return ret + [ci_val]
-
-

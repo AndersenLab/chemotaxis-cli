@@ -56,6 +56,11 @@ def main(args = sys.argv[1:]):
                         action="store_true",
                         default=False)
 
+    parser.add_argument("--fp_sigma",
+                        help="Sigma for canny when finding plate",
+                        type=int,
+                        default=1)
+
     args = parser.parse_args(args)
 
     if args.header:
@@ -75,7 +80,8 @@ def main(args = sys.argv[1:]):
                                         small=args.small,
                                         large=args.large,
                                         extra_crop=args.crop,
-                                        debug=args.debug)
+                                        debug=args.debug,
+                                        fp_sigma=args.fp_sigma)
 
             puts_err(colored.blue("Use pixel method for calculation"))
             result = pixel_counts(img, args.center)
