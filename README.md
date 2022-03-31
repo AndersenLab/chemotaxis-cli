@@ -14,7 +14,7 @@
     conda create --name chemotaxis_py2.7.12 python=2.7.12 
     
     # activate it
-    source activate chemotaxis_py2.7.12
+    conda activate chemotaxis_py2.7.12
     ```
     
 3. Clone the chemotaxis-cli repo to the directory of your choice.
@@ -37,7 +37,7 @@
     python chemotaxis-cli/setup.py install
     ```
     
-5. Run `ct` from within the `chemotaxis_py2.7.12` env following usage below. If you don’t plan to run `ct` its a good idea to `deactivate` your environment. [See details of conda environment management here.](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html)
+5. Run `ct` from within the `chemotaxis_py2.7.12` env following example usage below. If you don’t plan to run `ct` its a good idea to `deactivate` your environment. [See details of conda environment management here.](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html)
 
 ---
 
@@ -58,8 +58,6 @@
     
     # Run ct on all .jpg files within a directory.
     ct *.jpg  --radius 920 --fp_sigma 1 --crop 20 --center 5 --small 100 --large 1200 --debug --header > results1.txt
-    
-    # example output
     
     # Run on the second example with different parameters
     cd <your_path_to_chemotaxis_cli>/examples/example2
