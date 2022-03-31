@@ -73,7 +73,7 @@
 ## ct arguments
 
 - `--radius` sets the radius of n pixels used to find plates in the image. It can be helpful to measure this pixel value in imageJ for one image and provide it to `ct` so the program has an optimal starting radius for finding plates.
-- `--fp_sigma` sets the standard deviation of the Gaussian filter used in canny edge detection when finding the plate center and radius. Higher values will find only the most obvious plate features. The default is 1.
+- `--fp_sigma` float, sets the standard deviation of the Gaussian filter used in canny edge detection when finding the plate center and radius. Higher values will find only the most obvious plate features. The default is 1.
 - `--crop` will crop the plate radius by n pixels when creating the plate mask. This is useful if `ct` identifies the correct plate radius but the plate edges are identified as objects.
 - `--center` sets the denominator value for the equation (plate radius / x), which is used to specify the radius of the origin (center) mask. The origin (center) mask is used to avoid counting nematode objects that have not migrated away from the origin (center) of the plate. The default `--center` value is 5.
 - `--small` sets the pixel count used to filter out small objects.
