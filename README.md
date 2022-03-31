@@ -68,7 +68,7 @@
 
 | fname | q1 | q2 | q3 | q4 | n | total_q | total | ci |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| the file name without file extension | pixel count in top left quadrant | pixel count in top right quadrant | pixel count in bottom left quadrant | pixel count in bottom right quadrant | pixel count in origin (center) | sum of q1-q4 | sum of q1-q4 and n | chemotaxis index (CI) |
+| the file name without file extension | pixel count in top left quadrant | pixel count in top right quadrant | pixel count in bottom left quadrant | pixel count in bottom right quadrant | pixel count in origin (center) | sum of q1-q4 | sum of all | chemotaxis index (CI) |
 
 ## ct arguments
 
