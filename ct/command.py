@@ -35,9 +35,9 @@ def main(args = sys.argv[1:]):
                         default=1500)
 
     parser.add_argument("-r",
-                    "--rev",
-                    help="Reverse the sign of the CI index",
-                    action="store_true")
+                        "--rev",
+                        help="Reverse the sign of the CI index",
+                        action="store_true")
 
     parser.add_argument("--header",
                         help="Output a header",
@@ -45,10 +45,10 @@ def main(args = sys.argv[1:]):
                         action="store_true")
 
     parser.add_argument("-c",
-                    "--center",
-                    help="Divisor for defining center",
-                    type=int,
-                    default=5)
+                        "--center",
+                        help="Divisor for defining center",
+                        type=int,
+                        default=5)
 
     parser.add_argument("-d",
                         "--debug",
@@ -58,7 +58,7 @@ def main(args = sys.argv[1:]):
 
     parser.add_argument("--fp_sigma",
                         help="Sigma for canny when finding plate",
-                        type=int,
+                        type=float,
                         default=1)
 
     args = parser.parse_args(args)
