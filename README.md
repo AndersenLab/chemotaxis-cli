@@ -81,3 +81,20 @@
 - `--debug` will create many additional debug files that will help the user assess what objects are being counted and filtered.
 - `--header` will attach a column header to output text file.
 - `--rev` will reverse the sign of the chemotaxis index. This is helpful if the test and control compounds are switched from the default locations. Normally test compounds are in the top left and bottom right quadrants and controls are in the top right and bottom left quadrants.
+
+## Experimental workflow
+
+1. Bleach synchronize strains to be assayed.
+2. Use the COPAS BIOSORT with our custom chemotaxis plate holder to sort 50 synchronized L4 animals to the origin of chemotaxis assay plates.
+    1. The [CAD files and drawings required to fabricate our 3 part plate holder are here](https://github.com/AndersenLab/chemotaxis-cli/tree/master/customPlateHolder).
+    2. The parts are assembled from bottom to top in the following order: base, support, then plates.
+3. Spot control and test compounds onto the plates using a multi-channel pipet. The spot locations are etched into the chemotaxis plate holder for convenience.
+4. If necessary, wick the M9 fluid used to dispense the nematodes to the center of the chemotaxis plates away using the corner of a kimwipe.
+5. Once the dispensing fluid is removed allow the nematodes to respond to the compounds for 1 hour at 20°C.
+6. After 1 hour, transfer the chemotaxis plates to 4°C prior to imaging.
+7. Image the plates within 5 days, when imaging ensure that the edges of the plate are visible so that ct can setup the plate regions correctly.
+8. Prior to analyzing images with `ct`, open one image in [imageJ](https://imagej.nih.gov/ij/index.html) and manually measure the diameter of a plate in pixels.
+    1. Select the straight line tool
+    2. Draw a line across the diameter of the plate then click `command+m` to record a Length measurement. This is the diameter of the plate in pixels, divide by 2 to get the plate radius.
+9. Run `ct` on your images and provide your plate radius `--radius <your radius>` as an argument.
+10. Process the results
