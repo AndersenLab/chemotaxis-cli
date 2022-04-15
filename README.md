@@ -3,7 +3,9 @@
 # chemotaxis-cli
 
 *A command-line interface to measure chemotaxis index (CI) from chemotaxis assay images*
-
+---
+![ct_repo_workflow.png](https://github.com/AndersenLab/chemotaxis-cli/blob/master/img/ct_repo_workflow.png)
+---
 ## Install
 
 1. [Install anaconda](https://docs.anaconda.com/anaconda/install/index.html) if its not already installed.
