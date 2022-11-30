@@ -31,11 +31,14 @@
 4. Install the requirements and `ct` into your environment.
     
     ```bash
+    # navigate into the repository directory
+    cd <path_to_your_chemotaxis-cli_directory>
+    
     # install the requirements with pip
-    pip install -r chemotaxis-cli/requirements.txt
+    pip install -r requirements.txt
     
     # install ct
-    python chemotaxis-cli/setup.py install
+    python setup.py install
     ```
     
 5. Run `ct` from within the `chemotaxis_py2.7.12` env following example usage below. If you don’t plan to run `ct` its a good idea to `deactivate` your environment. [See details of conda environment management here.](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html)
